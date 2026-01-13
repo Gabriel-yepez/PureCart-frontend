@@ -58,6 +58,8 @@ export default function Home() {
           >
             Documentation
           </a>
+
+          <h1>commit de prueba</h1>
         </div>
       </main>
     </div>
