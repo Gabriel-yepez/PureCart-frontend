@@ -8,10 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import gsap from "gsap";
+import { useAuthStore } from "@/store/authStore";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { totalItems, toggleCart } = useCartStore();
+    const { user, isAuthenticated, logout } = useAuthStore();
     const [isScrolled, setIsScrolled] = useState(false);
     const headerRef = useRef<HTMLElement>(null);
     const logoRef = useRef<HTMLAnchorElement>(null);
@@ -110,16 +120,49 @@ export default function Header() {
                         </Button>
 
 
-                        <Button
-                            asChild
-                            variant="ghost"
-                            size="icon"
-                            className="hidden md:flex hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        >
-                            <Link href="/signin">
-                                <User className="w-5 h-5" />
-                            </Link>
-                        </Button>
+
+                        {isAuthenticated ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="hidden md:flex hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                    >
+                                        <User className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="cursor-default">
+                                        Signed in as <span className="font-bold ml-1">{user?.name}</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profile">Profile</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/orders">Orders</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600">
+                                        Log out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Button
+                                asChild
+                                variant="ghost"
+                                size="icon"
+                                className="hidden md:flex hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            >
+                                <Link href="/signin">
+                                    <User className="w-5 h-5" />
+                                </Link>
+                            </Button>
+                        )}
 
                         <Button
                             variant="ghost"
@@ -185,12 +228,23 @@ export default function Header() {
                                         Wishlist
                                     </Link>
                                 </Button>
-                                <Button asChild variant="outline" className="flex-1">
-                                    <Link href="/signin">
-                                        <User className="w-4 h-4 mr-2" />
-                                        Account
-                                    </Link>
-                                </Button>
+                                {isAuthenticated ? (
+                                    <>
+                                        <div className="flex-1 px-4 py-2 text-sm font-medium border rounded-md">
+                                            Hi, {user?.name}
+                                        </div>
+                                        <Button variant="outline" className="flex-1" onClick={() => logout()}>
+                                            Log out
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button asChild variant="outline" className="flex-1">
+                                        <Link href="/signin">
+                                            <User className="w-4 h-4 mr-2" />
+                                            Account
+                                        </Link>
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
