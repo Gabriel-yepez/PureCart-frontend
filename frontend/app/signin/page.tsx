@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Facebook, Twitter } from "lucide-react";
+import { Facebook, Twitter, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,13 @@ export default function SignInPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8">
+                <Link
+                    href="/"
+                    className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors w-fit group"
+                >
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Back to Home
+                </Link>
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                         Sign in to your account
