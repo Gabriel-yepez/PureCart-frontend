@@ -2,17 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Facebook, Twitter, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { loginAction, getOAuthUrlAction } from "@/lib/api/actions";
 
 export default function SignInPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const login = useAuthStore((state) => state.login);
+    const setSession = useAuthStore((state) => state.setSession);
     const router = useRouter();
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -21,16 +22,41 @@ export default function SignInPage() {
 
         const formData = new FormData(event.currentTarget);
         const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
 
-        // Simulation of sign in logic
-        setTimeout(() => {
-            // In a real app, we'd check the password and get the user name
-            login(email, "User");
-            toast.success("Signed in successfully!");
+        try {
+            const result = await loginAction(email, password);
+
+            if (result.ok && result.tokens && result.user) {
+                setSession(result.tokens, result.user);
+                toast.success("Signed in successfully!");
+                router.push("/");
+            } else {
+                toast.error(result.messages || "Login failed");
+            }
+        } catch {
+            toast.error("An unexpected error occurred");
+        } finally {
             setIsLoading(false);
-            router.push("/");
-        }, 1500);
+        }
     }
+
+    async function handleOAuth(provider: "google" | "facebook" | "twitter") {
+        setIsLoading(true);
+        try {
+            const result = await getOAuthUrlAction(provider);
+            if (result.ok && result.url) {
+                window.location.href = result.url;
+            } else {
+                toast.error(result.messages || `Failed to connect with ${provider}`);
+            }
+        } catch {
+            toast.error(`Failed to connect with ${provider}`);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8">
@@ -66,6 +92,7 @@ export default function SignInPage() {
                                 variant="outline"
                                 className="w-full flex items-center justify-center gap-2 h-11 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300 group"
                                 disabled={isLoading}
+                                onClick={() => handleOAuth("google")}
                             >
                                 <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                                     <path
@@ -92,6 +119,7 @@ export default function SignInPage() {
                                     variant="outline"
                                     className="w-full flex items-center justify-center gap-2 h-11 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300 group"
                                     disabled={isLoading}
+                                    onClick={() => handleOAuth("facebook")}
                                 >
                                     <Facebook className="h-4 w-4 text-[#1877F2] transition-transform group-hover:scale-110" />
                                     <span className="group-hover:text-black dark:group-hover:text-white transition-colors">Facebook</span>
@@ -100,6 +128,7 @@ export default function SignInPage() {
                                     variant="outline"
                                     className="w-full flex items-center justify-center gap-2 h-11 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300 group"
                                     disabled={isLoading}
+                                    onClick={() => handleOAuth("twitter")}
                                 >
                                     <Twitter className="h-4 w-4 text-sky-500 transition-transform group-hover:scale-110" />
                                     <span className="group-hover:text-black dark:group-hover:text-white transition-colors">Twitter</span>

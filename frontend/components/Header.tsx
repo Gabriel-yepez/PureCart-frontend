@@ -141,7 +141,7 @@ export default function Header() {
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem className="cursor-default">
-                                        Signed in as <span className="font-bold ml-1">{user?.name}</span>
+                                        Signed in as <span className="font-bold ml-1">{user?.full_name}</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
@@ -236,7 +236,7 @@ export default function Header() {
                                 {isMounted && isAuthenticated ? (
                                     <>
                                         <div className="flex-1 px-4 py-2 text-sm font-medium border rounded-md">
-                                            Hi, {user?.name}
+                                            Hi, {user?.full_name}
                                         </div>
                                         <Button variant="outline" className="flex-1" onClick={() => logout()}>
                                             Log out
