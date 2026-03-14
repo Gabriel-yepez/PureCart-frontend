@@ -1,35 +1,51 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-interface User {
-    id: string;
-    email: string;
-    name: string;
-}
+import type { User } from '@/lib/api/types';
 
 interface AuthState {
+    // ─── State ──────────────────────────────────────────────────────────────
     user: User | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    role: string | null;
     isAuthenticated: boolean;
-    login: (email: string, name: string) => void;
+
+    // ─── Actions ────────────────────────────────────────────────────────────
+    /** Persist tokens + user after a successful login/register Server Action */
+    setSession: (tokens: { access_token: string; refresh_token: string; role: string }, user: User) => void;
+    /** Update user data without changing tokens (e.g. after profile edit) */
+    setUser: (user: User) => void;
+    /** Clear session completely */
     logout: () => void;
-    signup: (email: string, name: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
             user: null,
+            accessToken: null,
+            refreshToken: null,
+            role: null,
             isAuthenticated: false,
-            login: (email, name) => 
-                set({ 
-                    user: { id: Math.random().toString(36).substr(2, 9), email, name }, 
-                    isAuthenticated: true 
+
+            setSession: (tokens, user) =>
+                set({
+                    accessToken: tokens.access_token,
+                    refreshToken: tokens.refresh_token,
+                    role: tokens.role,
+                    user,
+                    isAuthenticated: true,
                 }),
-            logout: () => set({ user: null, isAuthenticated: false }),
-            signup: (email, name) => 
-                set({ 
-                    user: { id: Math.random().toString(36).substr(2, 9), email, name }, 
-                    isAuthenticated: true 
+
+            setUser: (user) => set({ user }),
+
+            logout: () =>
+                set({
+                    user: null,
+                    accessToken: null,
+                    refreshToken: null,
+                    role: null,
+                    isAuthenticated: false,
                 }),
         }),
         {

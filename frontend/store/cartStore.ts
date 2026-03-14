@@ -1,27 +1,32 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface Product {
+export interface CartProduct {
   id: string;
   name: string;
   price: number;
   image: string;
+  /** Original price before discount (if any) */
+  originalPrice?: number;
+  /** Discount percentage (0-100) from the API */
+  discountPercent?: number;
 }
 
-export interface CartItem extends Product {
+export interface CartItem extends CartProduct {
   quantity: number;
 }
 
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  addItem: (product: Product) => void;
+  addItem: (product: CartProduct) => void;
   removeItem: (productId: string) => void;
   incrementItem: (productId: string) => void;
   decrementItem: (productId: string) => void;
   toggleCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
+  clearCart: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -74,18 +79,18 @@ export const useCartStore = create<CartState>()(
             ),
           });
         }
-        // Requirement: "que no pueda restar cuando el minimo sea" 
-        // We stop at 1. We don't remove it here (standard behavior usually requires a trash button for removal)
       },
 
       toggleCart: () => set({ isOpen: !get().isOpen }),
 
       totalItems: () => get().items.reduce((acc, item) => acc + item.quantity, 0),
-      
+
       totalPrice: () => get().items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+
+      clearCart: () => set({ items: [] }),
     }),
     {
-      name: 'cart-storage', // name of the item in the storage (must be unique)
+      name: 'cart-storage',
     }
   )
 );
