@@ -2,14 +2,14 @@
 
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShippingForm } from "@/components/checkout/ShippingForm";
 import { PaymentMethod } from "@/components/checkout/PaymentMethod";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import type { ShippingIn } from "@/lib/api/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,14 +17,25 @@ export default function CheckoutPage() {
   const { isAuthenticated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
+  // ─── Lifted state for shipping + payment ────────────────────────────────
+  const [shippingData, setShippingData] = useState<ShippingIn | null>(null);
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
-    // Authentication guard is handled gracefully during click on OrderSummary, 
-    // but if we want strictly authenticated users here:
     if (!isAuthenticated) {
       router.push("/signin?redirect=/checkout");
     }
   }, [isAuthenticated, router]);
+
+  // Stable callbacks so child components don't re-render needlessly
+  const handleShippingChange = useCallback((data: ShippingIn | null) => {
+    setShippingData(data);
+  }, []);
+
+  const handlePaymentChange = useCallback((methodId: string | null) => {
+    setPaymentMethodId(methodId);
+  }, []);
 
   if (!mounted) {
     return (
@@ -51,22 +62,25 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Formularios - Lado Izquierdo */}
+        {/* Forms – Left side */}
         <div className="lg:col-span-8 space-y-12">
-          {/* Tarjeta de Formulario de Envío */}
+          {/* Shipping */}
           <section className="bg-card p-6 md:p-8 rounded-3xl border shadow-sm transition-all hover:shadow-md">
-            <ShippingForm />
+            <ShippingForm onChange={handleShippingChange} />
           </section>
 
-          {/* Tarjeta de Pago */}
+          {/* Payment */}
           <section className="bg-card p-6 md:p-8 rounded-3xl border shadow-sm transition-all hover:shadow-md">
-            <PaymentMethod />
+            <PaymentMethod onChange={handlePaymentChange} />
           </section>
         </div>
 
-        {/* Resumen - Lado Derecho */}
+        {/* Summary – Right side */}
         <div className="lg:col-span-4 relative">
-          <OrderSummary />
+          <OrderSummary
+            shippingData={shippingData ?? undefined}
+            paymentMethodId={paymentMethodId ?? undefined}
+          />
         </div>
       </div>
     </div>
