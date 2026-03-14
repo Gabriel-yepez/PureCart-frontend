@@ -1,6 +1,8 @@
 "use client";
 
 import { useCartStore } from "@/store/cartStore";
+import { useRouter } from "next/navigation";
+import { formatPrice } from "@/lib/utils";
 import {
     Sheet,
     SheetContent,
@@ -14,6 +16,12 @@ import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 
 export default function Cart() {
     const { items, isOpen, toggleCart, incrementItem, decrementItem, removeItem, totalPrice } = useCartStore();
+    const router = useRouter();
+
+    const handleCheckout = () => {
+        toggleCart();
+        router.push("/checkout");
+    };
 
     return (
         <Sheet open={isOpen} onOpenChange={toggleCart}>
@@ -45,7 +53,7 @@ export default function Cart() {
                                         <div>
                                             <h4 className="font-semibold line-clamp-1">{item.name}</h4>
                                             <p className="text-sm text-muted-foreground">
-                                                ${item.price.toFixed(2)}
+                                                {formatPrice(item.price)}
                                             </p>
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
@@ -92,9 +100,9 @@ export default function Cart() {
                         <div className="w-full space-y-4">
                             <div className="flex items-center justify-between text-lg font-semibold">
                                 <span>Total</span>
-                                <span>${totalPrice().toFixed(2)}</span>
+                                <span>{formatPrice(totalPrice())}</span>
                             </div>
-                            <Button className="w-full" size="lg">
+                            <Button className="w-full" size="lg" onClick={handleCheckout}>
                                 Checkout
                             </Button>
                         </div>

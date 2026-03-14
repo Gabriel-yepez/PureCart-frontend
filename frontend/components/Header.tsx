@@ -18,13 +18,25 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
+const navItems = [
+    { name: "Mens", href: "/category/mens" },
+    { name: "Womens", href: "/category/womens" },
+    { name: "Kids", href: "/category/kids" },
+    { name: "Sale", href: "/category/sale" },
+];
+
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { totalItems, toggleCart } = useCartStore();
     const { user, isAuthenticated, logout } = useAuthStore();
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     const headerRef = useRef<HTMLElement>(null);
     const logoRef = useRef<HTMLAnchorElement>(null);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -49,13 +61,6 @@ export default function Header() {
             });
         }
     }, []);
-
-    const navItems = [
-        { name: "Mens", href: "/category/mens" },
-        { name: "Womens", href: "/category/womens" },
-        { name: "Kids", href: "/category/kids" },
-        { name: "Sale", href: "/category/sale" },
-    ];
 
     return (
         <header
@@ -121,7 +126,7 @@ export default function Header() {
 
 
 
-                        {isAuthenticated ? (
+                        {isMounted && isAuthenticated ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -171,7 +176,7 @@ export default function Header() {
                             onClick={toggleCart}
                         >
                             <ShoppingCart className="w-5 h-5" />
-                            {totalItems() > 0 && (
+                            {isMounted && totalItems() > 0 && (
                                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-black dark:bg-white text-white dark:text-black border-none text-xs">
                                     {totalItems()}
                                 </Badge>
@@ -228,7 +233,7 @@ export default function Header() {
                                         Wishlist
                                     </Link>
                                 </Button>
-                                {isAuthenticated ? (
+                                {isMounted && isAuthenticated ? (
                                     <>
                                         <div className="flex-1 px-4 py-2 text-sm font-medium border rounded-md">
                                             Hi, {user?.name}
