@@ -132,3 +132,32 @@ export async function getOAuthUrlAction(
     return { ok: false, messages: msg };
   }
 }
+
+export async function exchangeOAuthTokenAction(
+  supabaseAccessToken: string,
+): Promise<AuthActionResult> {
+  try {
+    const tokenRes = await authService.exchangeOAuthToken(supabaseAccessToken);
+    const tokens = tokenRes.data!;
+
+    // Fetch the user profile using the fresh app token
+    const userRes = await usersService.getMyProfile(tokens.access_token);
+
+    return {
+      ok: true,
+      messages: tokenRes.messages,
+      tokens: {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        role: tokens.role,
+      },
+      user: userRes.data ?? undefined,
+    };
+  } catch (error) {
+    const msg =
+      error instanceof ApiError
+        ? error.messages
+        : "Failed to complete OAuth login";
+    return { ok: false, messages: msg };
+  }
+}
