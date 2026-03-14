@@ -22,14 +22,18 @@ export const authService = {
     return api.post<null>("/auth/logout", undefined, { rawResponse: true });
   },
 
-  getOAuthUrl(provider: "google" | "facebook" | "twitter") {
-    return api.get<OAuthUrlResponse>(`/auth/login/${provider}`);
+  /** Get OAuth URL with PKCE code_challenge for Authorization Code flow */
+  getOAuthUrl(provider: "google" | "facebook" | "twitter", codeChallenge: string) {
+    return api.get<OAuthUrlResponse>(
+      `/auth/login/${provider}?code_challenge=${encodeURIComponent(codeChallenge)}`,
+    );
   },
 
-  /** Exchange a Supabase OAuth access_token for app JWT tokens */
-  exchangeOAuthToken(supabaseAccessToken: string) {
+  /** Exchange an authorization code + PKCE code_verifier for app JWT tokens */
+  exchangeOAuthCode(code: string, codeVerifier: string) {
     return api.post<TokenResponse>("/auth/oauth/callback", {
-      access_token: supabaseAccessToken,
+      code,
+      code_verifier: codeVerifier,
     });
   },
 } as const;

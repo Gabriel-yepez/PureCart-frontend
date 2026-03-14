@@ -23,11 +23,12 @@ export async function createOrderAction(
     const res = await ordersService.create(data, token);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to create order";
-    return { ok: false, order: null, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, order: null, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[createOrderAction]", detail);
+    return { ok: false, order: null, messages: `Failed to create order: ${detail}` };
   }
 }
 
@@ -38,11 +39,12 @@ export async function getMyOrdersAction(
     const res = await ordersService.listMine(token);
     return { ok: true, orders: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load orders";
-    return { ok: false, orders: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, orders: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getMyOrdersAction]", detail);
+    return { ok: false, orders: [], messages: `Failed to load orders: ${detail}` };
   }
 }
 
@@ -54,11 +56,12 @@ export async function getOrderByIdAction(
     const res = await ordersService.getById(orderId, token);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load order";
-    return { ok: false, order: null, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, order: null, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getOrderByIdAction]", detail);
+    return { ok: false, order: null, messages: `Failed to load order: ${detail}` };
   }
 }
 
@@ -70,11 +73,12 @@ export async function cancelOrderAction(
     const res = await ordersService.cancel(orderId, token);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to cancel order";
-    return { ok: false, order: null, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, order: null, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[cancelOrderAction]", detail);
+    return { ok: false, order: null, messages: `Failed to cancel order: ${detail}` };
   }
 }
 
@@ -87,10 +91,11 @@ export async function getPaymentMethodsAction(): Promise<{
     const res = await paymentMethodsService.list();
     return { ok: true, methods: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load payment methods";
-    return { ok: false, methods: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, methods: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getPaymentMethodsAction]", detail);
+    return { ok: false, methods: [], messages: `Failed to load payment methods: ${detail}` };
   }
 }

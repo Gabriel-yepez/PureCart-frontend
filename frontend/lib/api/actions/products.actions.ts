@@ -27,11 +27,12 @@ export async function getProductsAction(
     const res = await productsService.list(filters);
     return { ok: true, products: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load products";
-    return { ok: false, products: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, products: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getProductsAction]", detail);
+    return { ok: false, products: [], messages: `Failed to load products: ${detail}` };
   }
 }
 
@@ -42,11 +43,12 @@ export async function getDiscountedProductsAction(
     const res = await productsService.getDiscounted(limit);
     return { ok: true, products: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load discounted products";
-    return { ok: false, products: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, products: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getDiscountedProductsAction]", detail);
+    return { ok: false, products: [], messages: `Failed to load discounted products: ${detail}` };
   }
 }
 
@@ -57,11 +59,12 @@ export async function getBestSellersAction(
     const res = await productsService.getBestSellers(limit);
     return { ok: true, products: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load best sellers";
-    return { ok: false, products: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, products: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getBestSellersAction]", detail);
+    return { ok: false, products: [], messages: `Failed to load best sellers: ${detail}` };
   }
 }
 
@@ -72,10 +75,11 @@ export async function getProductByIdAction(
     const res = await productsService.getById(productId);
     return { ok: true, product: res.data ?? null, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load product details";
-    return { ok: false, product: null, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, product: null, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getProductByIdAction]", detail);
+    return { ok: false, product: null, messages: `Failed to load product: ${detail}` };
   }
 }

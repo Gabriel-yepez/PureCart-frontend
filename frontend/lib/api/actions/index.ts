@@ -4,7 +4,7 @@ export {
   registerAction,
   refreshTokenAction,
   getOAuthUrlAction,
-  exchangeOAuthTokenAction,
+  exchangeOAuthCodeAction,
 } from "./auth.actions";
 
 export {

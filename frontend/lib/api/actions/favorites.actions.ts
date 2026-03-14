@@ -15,11 +15,12 @@ export async function getFavoritesAction(
     const res = await favoritesService.getAll(token);
     return { ok: true, favorites: res.data ?? [], messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to load favorites";
-    return { ok: false, favorites: [], messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, favorites: [], messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getFavoritesAction]", detail);
+    return { ok: false, favorites: [], messages: `Failed to load favorites: ${detail}` };
   }
 }
 
@@ -31,11 +32,12 @@ export async function addFavoriteAction(
     const res = await favoritesService.add(productId, token);
     return { ok: true, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to add to favorites";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[addFavoriteAction]", detail);
+    return { ok: false, messages: `Failed to add to favorites: ${detail}` };
   }
 }
 
@@ -47,10 +49,11 @@ export async function removeFavoriteAction(
     await favoritesService.remove(productId, token);
     return { ok: true, messages: "Removed from favorites" };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to remove from favorites";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[removeFavoriteAction]", detail);
+    return { ok: false, messages: `Failed to remove from favorites: ${detail}` };
   }
 }
