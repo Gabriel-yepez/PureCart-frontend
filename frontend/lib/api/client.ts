@@ -81,17 +81,20 @@ async function request<T>(
     return { ok: true, data: null as T, messages: "Success" };
   }
 
-  const json: ApiResponse<T> = await response.json();
+  const json = await response.json();
 
   if (!response.ok || !json.ok) {
+    // FastAPI error responses use {"detail": "..."} instead of ApiResponse envelope
+    const errorMessage =
+      json.messages || json.detail || `Request failed with status ${response.status}`;
     throw new ApiError(
       response.status,
-      json.messages || `Request failed with status ${response.status}`,
-      json.data,
+      errorMessage,
+      json.data ?? null,
     );
   }
 
-  return json;
+  return json as ApiResponse<T>;
 }
 
 // ─── Public HTTP verbs ──────────────────────────────────────────────────────

@@ -46,15 +46,30 @@ export default function Cart() {
                         <div className="space-y-6">
                             {items.map((item) => (
                                 <div key={item.id} className="flex gap-4">
-                                    <div className="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-3xl flex-shrink-0">
-                                        {item.image}
+                                    <div className="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
+                                        {item.image.startsWith("http") ? (
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            item.image
+                                        )}
                                     </div>
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
                                             <h4 className="font-semibold line-clamp-1">{item.name}</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                {formatPrice(item.price)}
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm text-muted-foreground">
+                                                    {formatPrice(item.price)}
+                                                </p>
+                                                {item.originalPrice && (
+                                                    <p className="text-xs text-muted-foreground/60 line-through">
+                                                        {formatPrice(item.originalPrice)}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
                                             <div className="flex items-center gap-2 border rounded-md p-1">

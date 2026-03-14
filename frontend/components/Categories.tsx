@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
@@ -126,10 +127,10 @@ export default function Categories() {
                     className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6"
                 >
                     {categories.map((category) => (
-                        <Card
-                            key={category.id}
-                            className="category-card group cursor-pointer border-border/50 hover:border-transparent transition-all duration-300 hover:shadow-xl overflow-hidden"
-                        >
+                        <Link key={category.id} href={`/category/${category.name.toLowerCase().replace(/ & /g, "-")}`}>
+                            <Card
+                                className="category-card group cursor-pointer border-border/50 hover:border-transparent transition-all duration-300 hover:shadow-xl overflow-hidden h-full"
+                            >
                             <CardContent className="p-6 text-center space-y-4 relative">
                                 {/* Gradient Background on Hover */}
                                 <div
@@ -158,7 +159,8 @@ export default function Categories() {
                                     <ArrowRight className="w-4 h-4 mx-auto text-muted-foreground group-hover:text-black dark:group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
                                 </div>
                             </CardContent>
-                        </Card>
+                            </Card>
+                        </Link>
                     ))}
                 </div>
             </div>

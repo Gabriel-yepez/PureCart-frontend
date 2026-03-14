@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { Card, CardContent } from "@/components/ui/card";
@@ -200,22 +201,24 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                                     <CardContent className="p-0">
                                         {/* Product Image */}
                                         <div className="relative aspect-square bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-950/20 dark:via-gray-900/20 dark:to-gray-950/20 flex items-center justify-center overflow-hidden">
-                                            {product.image_url ? (
-                                                <img
-                                                    src={product.image_url}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                />
-                                            ) : (
-                                                <div className="text-8xl group-hover:scale-110 transition-transform duration-500">
-                                                    📦
-                                                </div>
-                                            )}
+                                            <Link href={`/product/${product.id}`} className="absolute inset-0 z-0">
+                                                {product.image_url ? (
+                                                    <img
+                                                        src={product.image_url}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-8xl group-hover:scale-110 transition-transform duration-500">
+                                                        📦
+                                                    </div>
+                                                )}
+                                            </Link>
 
                                             {/* Badge */}
                                             {badge && (
                                                 <Badge
-                                                    className={`absolute top-3 left-3 ${badge.color} text-white border-none`}
+                                                    className={`absolute top-3 left-3 z-10 ${badge.color} text-white border-none pointer-events-none`}
                                                 >
                                                     {badge.label}
                                                 </Badge>
@@ -225,7 +228,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                                             <Button
                                                 size="icon"
                                                 variant="secondary"
-                                                className={`absolute top-3 right-3 transition-all duration-300 bg-white/90 dark:bg-black/90 hover:bg-white dark:hover:bg-black ${
+                                                className={`absolute top-3 right-3 z-10 transition-all duration-300 bg-white/90 dark:bg-black/90 hover:bg-white dark:hover:bg-black ${
                                                     isFav ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                                 }`}
                                                 onClick={() => handleToggleFavorite(product.id)}
@@ -246,7 +249,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
 
                                             {/* Quick Add to Cart */}
                                             <Button
-                                                className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                                                className="absolute bottom-3 left-3 right-3 z-10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                                                 onClick={() => handleAddToCart(product)}
                                                 disabled={product.stock <= 0}
                                             >
@@ -256,7 +259,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                                         </div>
 
                                         {/* Product Info */}
-                                        <div className="p-4 space-y-3">
+                                        <Link href={`/product/${product.id}`} className="block p-4 space-y-3">
                                             <div className="space-y-1">
                                                 <p className="text-xs text-muted-foreground">
                                                     {product.category ?? "General"}
@@ -306,7 +309,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                                                     </Badge>
                                                 )}
                                             </div>
-                                        </div>
+                                        </Link>
                                     </CardContent>
                                 </Card>
                             );
@@ -318,11 +321,12 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                 {products.length > 0 && (
                     <div className="text-center mt-12">
                         <Button
+                            asChild
                             size="lg"
                             variant="outline"
                             className="border-2 hover:bg-gray-50 dark:hover:bg-gray-950/20 transition-all duration-300"
                         >
-                            View All Products
+                            <Link href="/category/all">View All Products</Link>
                         </Button>
                     </div>
                 )}

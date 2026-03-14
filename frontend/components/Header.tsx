@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { ShoppingCart, Search, Menu, X, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,22 @@ export default function Header() {
     const { user, isAuthenticated, logout } = useAuthStore();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const headerRef = useRef<HTMLElement>(null);
     const logoRef = useRef<HTMLAnchorElement>(null);
+    const router = useRouter();
+
+    const handleSearch = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            const trimmed = searchQuery.trim();
+            if (!trimmed) return;
+            router.push(`/category/all?search=${encodeURIComponent(trimmed)}`);
+            setSearchQuery("");
+            setIsMenuOpen(false);
+        },
+        [searchQuery, router],
+    );
 
     useEffect(() => {
         setIsMounted(true);
@@ -101,14 +116,16 @@ export default function Header() {
 
                     {/* Search Bar - Desktop */}
                     <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
-                        <div className="relative w-full">
+                        <form onSubmit={handleSearch} className="relative w-full">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                             <Input
                                 type="search"
                                 placeholder="Search products..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10 pr-4 py-2 w-full bg-muted/50 border-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
                             />
-                        </div>
+                        </form>
                     </div>
 
                     {/* Action Buttons */}
@@ -204,14 +221,16 @@ export default function Header() {
                     <div className="lg:hidden py-4 border-t border-border/50 animate-in slide-in-from-top-5 duration-300">
                         <div className="flex flex-col space-y-4">
                             {/* Mobile Search */}
-                            <div className="relative">
+                            <form onSubmit={handleSearch} className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                                 <Input
                                     type="search"
                                     placeholder="Search products..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     className="pl-10 pr-4 py-2 w-full bg-muted/50 border-none"
                                 />
-                            </div>
+                            </form>
 
                             {/* Mobile Nav Items */}
                             {navItems.map((item) => (

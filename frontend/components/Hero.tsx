@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import gsap from "gsap";
@@ -109,18 +110,22 @@ export default function Hero() {
 
                         <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Button
+                                asChild
                                 size="lg"
                                 className="bg-gradient-to-r from-gray-800 to-gray-600 hover:from-gray-900 hover:to-gray-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 group"
                             >
-                                Shop Now
-                                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <a href="#shop">
+                                    Shop Now
+                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </a>
                             </Button>
                             <Button
+                                asChild
                                 size="lg"
                                 variant="outline"
                                 className="border-2 hover:bg-gray-50 dark:hover:bg-gray-950/20 transition-all duration-300"
                             >
-                                View Collections
+                                <Link href="/category/all">View Collections</Link>
                             </Button>
                         </div>
 
