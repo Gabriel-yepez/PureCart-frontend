@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { loginAction, getOAuthUrlAction } from "@/lib/api/actions";
+import { generatePKCE } from "@/lib/pkce";
 
 export default function SignInPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,10 @@ export default function SignInPage() {
     async function handleOAuth(provider: "google" | "facebook" | "twitter") {
         setIsLoading(true);
         try {
-            const result = await getOAuthUrlAction(provider);
+            // Generate PKCE code_verifier/code_challenge pair.
+            // code_verifier is stored in sessionStorage for the callback.
+            const { codeChallenge } = await generatePKCE();
+            const result = await getOAuthUrlAction(provider, codeChallenge);
             if (result.ok && result.url) {
                 window.location.href = result.url;
             } else {

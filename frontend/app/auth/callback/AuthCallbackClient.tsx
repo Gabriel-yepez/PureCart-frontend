@@ -3,24 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { exchangeOAuthTokenAction } from "@/lib/api/actions";
+import { exchangeOAuthCodeAction } from "@/lib/api/actions";
+import { consumeCodeVerifier } from "@/lib/pkce";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 /**
- * OAuth Callback Client Component
+ * OAuth Callback Client Component — PKCE (Authorization Code) Flow
  *
  * After the user completes the OAuth consent flow (e.g. Google),
- * Supabase redirects back with tokens in the URL **hash fragment**
- * (implicit grant flow):
+ * Supabase redirects back with an authorization **code** in the
+ * query string (not a token in the hash fragment):
  *
- *   /auth/callback#access_token=...&refresh_token=...&token_type=bearer&...
+ *   /auth/callback?code=...
  *
  * This component:
- * 1. Parses the Supabase access_token from the hash fragment
- * 2. Sends it to our backend (POST /auth/oauth/callback) to exchange for app JWTs
- * 3. Stores the session in Zustand (persisted to localStorage)
- * 4. Redirects to the home page
+ * 1. Reads the `code` from the URL query params
+ * 2. Retrieves the `code_verifier` from sessionStorage (stored before redirect)
+ * 3. Sends both to our backend (POST /auth/oauth/callback) for PKCE exchange
+ * 4. Stores the session in Zustand (persisted to localStorage)
+ * 5. Redirects to the home page
  */
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -44,34 +46,39 @@ export default function AuthCallbackClient() {
           throw new Error(qpError);
         }
 
-        // ─── Parse the hash fragment ────────────────────────────────
-        const hash = window.location.hash.substring(1); // remove leading '#'
-
-        if (!hash) {
-          // Fallback: check query params for access_token (rare)
-          const qpAccessToken = searchParams.get("access_token");
-          if (qpAccessToken) {
-            await exchangeAndStore(qpAccessToken);
-            return;
-          }
+        // ─── Get the authorization code from query params ───────────
+        const code = searchParams.get("code");
+        if (!code) {
           throw new Error(
-            "No authentication data found in URL. Make sure the OAuth redirect is configured correctly in Supabase."
+            "No authorization code found in URL. Make sure the OAuth redirect is configured correctly in Supabase."
           );
         }
 
-        const params = new URLSearchParams(hash);
-        const supabaseAccessToken = params.get("access_token");
-
-        if (!supabaseAccessToken) {
-          // Check for error in hash params
-          const errorDescription =
-            params.get("error_description") || params.get("error");
+        // ─── Retrieve the PKCE code_verifier from sessionStorage ────
+        const codeVerifier = consumeCodeVerifier();
+        if (!codeVerifier) {
           throw new Error(
-            errorDescription || "No access token found in OAuth response"
+            "PKCE code verifier not found. This can happen if you opened this page directly, " +
+            "cleared browser storage, or used a different browser/tab. Please try signing in again."
           );
         }
 
-        await exchangeAndStore(supabaseAccessToken);
+        // ─── Exchange code + code_verifier for app JWTs ─────────────
+        const result = await exchangeOAuthCodeAction(code, codeVerifier);
+
+        if (!result.ok || !result.tokens || !result.user) {
+          throw new Error(result.messages || "Failed to authenticate with OAuth");
+        }
+
+        // Store the session in Zustand (persisted to localStorage)
+        setSession(result.tokens, result.user);
+        setStatus("success");
+        toast.success(`Welcome, ${result.user.full_name}!`);
+
+        // Redirect to home page (short delay so toast is visible)
+        setTimeout(() => {
+          router.replace("/");
+        }, 800);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Authentication failed";
@@ -85,25 +92,6 @@ export default function AuthCallbackClient() {
           router.replace("/signin");
         }, 3000);
       }
-    }
-
-    async function exchangeAndStore(supabaseAccessToken: string) {
-      // Exchange Supabase token for app JWTs via our backend
-      const result = await exchangeOAuthTokenAction(supabaseAccessToken);
-
-      if (!result.ok || !result.tokens || !result.user) {
-        throw new Error(result.messages || "Failed to authenticate with OAuth");
-      }
-
-      // Store the session in Zustand (persisted to localStorage)
-      setSession(result.tokens, result.user);
-      setStatus("success");
-      toast.success(`Welcome, ${result.user.full_name}!`);
-
-      // Redirect to home page (short delay so toast is visible)
-      setTimeout(() => {
-        router.replace("/");
-      }, 800);
     }
 
     handleCallback();

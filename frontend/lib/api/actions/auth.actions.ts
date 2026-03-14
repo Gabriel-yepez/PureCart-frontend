@@ -46,11 +46,12 @@ export async function loginAction(
       user: userRes.data ?? undefined,
     };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "An unexpected error occurred during login";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[loginAction]", detail);
+    return { ok: false, messages: `Login failed: ${detail}` };
   }
 }
 
@@ -82,11 +83,12 @@ export async function registerAction(
       user: userRes.data ?? undefined,
     };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "An unexpected error occurred during registration";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[registerAction]", detail);
+    return { ok: false, messages: `Registration failed: ${detail}` };
   }
 }
 
@@ -110,34 +112,38 @@ export async function refreshTokenAction(
       user: userRes.data ?? undefined,
     };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Session expired. Please log in again.";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[refreshTokenAction]", detail);
+    return { ok: false, messages: `Session refresh failed: ${detail}` };
   }
 }
 
 export async function getOAuthUrlAction(
   provider: "google" | "facebook" | "twitter",
+  codeChallenge: string,
 ): Promise<{ ok: boolean; url?: string; messages: string }> {
   try {
-    const res = await authService.getOAuthUrl(provider);
+    const res = await authService.getOAuthUrl(provider, codeChallenge);
     return { ok: true, url: res.data?.url, messages: res.messages };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : `Failed to get ${provider} OAuth URL`;
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[getOAuthUrlAction]", detail);
+    return { ok: false, messages: `OAuth URL failed: ${detail}` };
   }
 }
 
-export async function exchangeOAuthTokenAction(
-  supabaseAccessToken: string,
+export async function exchangeOAuthCodeAction(
+  code: string,
+  codeVerifier: string,
 ): Promise<AuthActionResult> {
   try {
-    const tokenRes = await authService.exchangeOAuthToken(supabaseAccessToken);
+    const tokenRes = await authService.exchangeOAuthCode(code, codeVerifier);
     const tokens = tokenRes.data!;
 
     // Fetch the user profile using the fresh app token
@@ -154,10 +160,11 @@ export async function exchangeOAuthTokenAction(
       user: userRes.data ?? undefined,
     };
   } catch (error) {
-    const msg =
-      error instanceof ApiError
-        ? error.messages
-        : "Failed to complete OAuth login";
-    return { ok: false, messages: msg };
+    if (error instanceof ApiError) {
+      return { ok: false, messages: error.messages };
+    }
+    const detail = error instanceof Error ? error.message : "Unknown error";
+    console.error("[exchangeOAuthCodeAction]", detail);
+    return { ok: false, messages: `OAuth exchange failed: ${detail}` };
   }
 }

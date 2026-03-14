@@ -38,7 +38,8 @@ export interface OAuthUrlResponse {
 }
 
 export interface OAuthCallbackRequest {
-  access_token: string;
+  code: string;
+  code_verifier: string;
 }
 
 // ─── Users ──────────────────────────────────────────────────────────────────

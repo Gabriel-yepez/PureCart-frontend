@@ -13,6 +13,15 @@ import type { ApiResponse } from "./types";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const API_PREFIX = "/api/v1";
 
+// ─── Configuration warning (server-side only, logged once at startup) ───────
+// Helps diagnose production issues where the env var is not set.
+if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
+  console.warn(
+    "[PureCart API Client] ⚠️  NEXT_PUBLIC_API_URL is not set — defaulting to http://localhost:8000. " +
+      "This will fail in production (Vercel). Set this env var in your deployment environment.",
+  );
+}
+
 // ─── Token helpers (client-side only) ───────────────────────────────────────
 // On the server side we receive tokens explicitly; on the client we fall back
 // to localStorage (managed by the auth store via Zustand-persist).
@@ -70,11 +79,27 @@ async function request<T>(
 
   const url = `${API_BASE_URL}${API_PREFIX}${endpoint}`;
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkError) {
+    // Network-level failure (DNS, ECONNREFUSED, timeout, etc.)
+    // This is the most common cause of "unexpected error" in production
+    // when NEXT_PUBLIC_API_URL is not configured.
+    const reason =
+      networkError instanceof Error ? networkError.message : String(networkError);
+    console.error(
+      `[PureCart API] Network error fetching ${url}: ${reason}`,
+    );
+    throw new ApiError(
+      0,
+      `Cannot reach API server at ${API_BASE_URL}. ${reason}`,
+    );
+  }
 
   // 204 No Content (e.g. logout, delete)
   if (response.status === 204 || rawResponse) {
