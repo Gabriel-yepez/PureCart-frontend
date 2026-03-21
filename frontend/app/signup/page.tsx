@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Facebook, Twitter, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,7 @@ export default function SignUpPage() {
         }
     }
 
-    async function handleOAuth(provider: "google" | "facebook" | "twitter") {
+    async function handleOAuth(provider: "google") {
         setIsLoading(true);
         try {
             // Generate PKCE code_verifier/code_challenge pair.
@@ -126,26 +126,7 @@ export default function SignUpPage() {
                                 </svg>
                                 <span className="group-hover:text-black dark:group-hover:text-white transition-colors font-medium">Continue with Google</span>
                             </Button>
-                            <div className="grid grid-cols-2 gap-3">
-                                <Button
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center gap-2 h-11 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300 group"
-                                    disabled={isLoading}
-                                    onClick={() => handleOAuth("facebook")}
-                                >
-                                    <Facebook className="h-4 w-4 text-[#1877F2] transition-transform group-hover:scale-110" />
-                                    <span className="group-hover:text-black dark:group-hover:text-white transition-colors">Facebook</span>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center gap-2 h-11 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300 group"
-                                    disabled={isLoading}
-                                    onClick={() => handleOAuth("twitter")}
-                                >
-                                    <Twitter className="h-4 w-4 text-sky-500 transition-transform group-hover:scale-110" />
-                                    <span className="group-hover:text-black dark:group-hover:text-white transition-colors">Twitter</span>
-                                </Button>
-                            </div>
+
                         </div>
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
