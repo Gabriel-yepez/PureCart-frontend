@@ -343,12 +343,160 @@ export default function robots(): MetadataRoute.Robots {
 
 ---
 
+---
+
+## Section 6 — Auth Security
+
+### Motivation
+
+Storing JWTs in `localStorage` (via Zustand persist) is vulnerable to XSS. Any injected script can read the token with one line:
+```js
+JSON.parse(localStorage.getItem('auth-storage')).state.accessToken
+```
+An `HttpOnly` cookie cannot be read by JavaScript under any circumstances, even if the page has an active XSS vulnerability.
+
+### Target Architecture
+
+```
+Before:
+  loginAction → returns tokens to client → authStore.setSession() → localStorage
+  client.ts → reads token from localStorage → injects in Bearer header
+
+After:
+  loginAction → cookies().set('pca-access', jwt, { httpOnly: true }) → no token returned
+  Server Actions → cookies().get('pca-access') internally → injects in Bearer header
+  authStore → stores only user metadata (name, email, role, avatar) — no tokens
+```
+
+### 6.1 Cookie Strategy
+
+Two HttpOnly cookies replace localStorage token storage:
+
+| Cookie | Value | Flags | Max-Age |
+|--------|-------|-------|---------|
+| `pca-access` | JWT access token | `HttpOnly, Secure, SameSite=Lax, Path=/` | 15 min |
+| `pca-refresh` | JWT refresh token | `HttpOnly, Secure, SameSite=Lax, Path=/` | 7 days |
+
+`pca-access` also replaces `pca-session` from Section 1.2 — `proxy.ts` reads `pca-access` directly instead of a separate flag cookie.
+
+**CSRF protection:** `SameSite=Lax` blocks cross-origin POST requests (the primary CSRF vector). No additional CSRF token needed for this threat model.
+
+### 6.2 Auth Actions — Set Cookies Instead of Returning Tokens
+
+`loginAction`, `registerAction`, and `exchangeOAuthCodeAction` are modified to:
+1. Call the backend and receive tokens
+2. Set `pca-access` and `pca-refresh` HttpOnly cookies via `cookies().set()`
+3. Return only `{ ok, messages, user }` — no tokens in the return value
+
+```ts
+import { cookies } from 'next/headers'
+
+// Inside loginAction, after receiving tokenRes:
+const cookieStore = await cookies()
+cookieStore.set('pca-access', tokens.access_token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 60 * 15, // 15 minutes
+})
+cookieStore.set('pca-refresh', tokens.refresh_token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 60 * 60 * 24 * 7, // 7 days
+})
+```
+
+`logoutAction` (new) clears both cookies:
+```ts
+cookieStore.delete('pca-access')
+cookieStore.delete('pca-refresh')
+```
+
+### 6.3 `client.ts` — Token Resolution on Server-Side
+
+`getAccessToken()` is split into two code paths:
+
+```ts
+async function resolveToken(explicitToken?: string): Promise<string | null> {
+  if (explicitToken) return explicitToken
+
+  // Server-side: read from HttpOnly cookie
+  if (typeof window === 'undefined') {
+    const { cookies } = await import('next/headers')
+    const store = await cookies()
+    return store.get('pca-access')?.value ?? null
+  }
+
+  // Client-side: tokens no longer in localStorage — return null
+  // All authenticated calls must go through Server Actions
+  return null
+}
+```
+
+Client components no longer call authenticated API endpoints directly. All auth-gated operations go through Server Actions that run on the server where the cookie is accessible.
+
+### 6.4 Token Refresh Flow
+
+New `refreshSessionAction` Server Action:
+1. Reads `pca-refresh` cookie
+2. Calls `authService.refresh(refreshToken)`
+3. Rotates both cookies with fresh tokens
+4. Returns updated user data
+
+This action is called automatically when any Server Action receives a 401 from the API. The `client.ts` catches `ApiError` with `status === 401`, calls `refreshSessionAction`, and retries the original request once.
+
+### 6.5 `authStore` — Remove Token Fields
+
+`accessToken` and `refreshToken` are removed from `AuthState`. The store becomes:
+
+```ts
+interface AuthState {
+  user: User | null
+  role: string | null
+  isAuthenticated: boolean
+  setSession: (user: User, role: string) => void
+  setUser: (user: User) => void
+  logout: () => void  // now also calls logoutAction to clear cookies
+}
+```
+
+### 6.6 Server Actions — Remove Token Parameter
+
+All Server Actions currently accept a `token: string` parameter passed from client components. After this change they read internally from cookies:
+
+```ts
+// Before
+export async function getFavoritesAction(token: string) { ... }
+
+// After
+export async function getFavoritesAction() {
+  // token resolved automatically in client.ts via cookies()
+  const result = await favoritesService.getAll()
+  ...
+}
+```
+
+All call sites in client components remove the `accessToken` argument.
+
+---
+
 ## Execution Order
 
 ```
-Phase 1 (Foundation — independent, highest impact):
+Phase 0 (Auth Security — do FIRST, everything depends on cookie strategy):
+  ├── 6.1 Cookie strategy decision
+  ├── 6.2 Auth actions → set HttpOnly cookies
+  ├── 6.3 client.ts → server-side cookie resolution
+  ├── 6.4 Token refresh flow
+  ├── 6.5 authStore → remove token fields
+  └── 6.6 Server Actions → remove token parameter
+
+Phase 1 (Foundation — after Phase 0, proxy.ts reads pca-access cookie):
   ├── 1.1 ThemeProvider
-  ├── 1.2 proxy.ts + pca-session cookie in auth actions
+  ├── 1.2 proxy.ts (reads pca-access, not pca-session)
   ├── 1.3 error.tsx + not-found.tsx
   └── 1.4 loading.tsx + skeletons
 
@@ -400,12 +548,14 @@ Phase 5 (SEO — independent, do last):
 | `frontend/app/page.tsx` | Remove dynamic() wrappers |
 | `frontend/app/product/[id]/page.tsx` | Add generateMetadata |
 | `frontend/app/category/[slug]/page.tsx` | Add generateMetadata |
-| `frontend/app/favorites/page.tsx` | Remove "use client" + mounted pattern |
-| `frontend/app/orders/page.tsx` | Remove "use client" + mounted pattern |
-| `frontend/components/ProductGrid.tsx` | next/image, remove GSAP, favoritesStore |
+| `frontend/app/favorites/page.tsx` | Remove mounted anti-pattern, remove token param |
+| `frontend/app/orders/page.tsx` | Remove mounted anti-pattern, remove token param |
+| `frontend/components/ProductGrid.tsx` | next/image, remove GSAP, favoritesStore, remove token param |
 | `frontend/components/Header.tsx` | Link, remove style jsx + GSAP |
-| `frontend/components/ProductDetail.tsx` | next/image, favoritesStore |
-| `frontend/lib/api/client.ts` | Add nextOptions to RequestOptions |
+| `frontend/components/ProductDetail.tsx` | next/image, favoritesStore, remove token param |
+| `frontend/lib/api/client.ts` | Cookie-based token resolution + nextOptions |
 | `frontend/lib/api/services/products.service.ts` | Add revalidate cache |
-| `frontend/lib/api/actions/auth.actions.ts` | Set pca-session cookie |
-| `frontend/store/authStore.ts` | Delete pca-session cookie on logout |
+| `frontend/lib/api/actions/auth.actions.ts` | Set HttpOnly cookies, remove token from return |
+| `frontend/lib/api/actions/favorites.actions.ts` | Remove token parameter |
+| `frontend/lib/api/actions/orders.actions.ts` | Remove token parameter |
+| `frontend/store/authStore.ts` | Remove accessToken + refreshToken fields |
