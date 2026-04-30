@@ -66,12 +66,11 @@ export default function AuthCallbackClient() {
         // ─── Exchange code + code_verifier for app JWTs ─────────────
         const result = await exchangeOAuthCodeAction(code, codeVerifier);
 
-        if (!result.ok || !result.tokens || !result.user) {
+        if (!result.ok || !result.user || !result.role) {
           throw new Error(result.messages || "Failed to authenticate with OAuth");
         }
 
-        // Store the session in Zustand (persisted to localStorage)
-        setSession(result.tokens, result.user);
+        setSession(result.user, result.role);
         setStatus("success");
         toast.success(`Welcome, ${result.user.full_name}!`);
 

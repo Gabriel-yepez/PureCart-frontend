@@ -36,8 +36,8 @@ export default function SignUpPage() {
         try {
             const result = await registerAction(email, password, name);
 
-            if (result.ok && result.tokens && result.user) {
-                setSession(result.tokens, result.user);
+            if (result.ok && result.user && result.role) {
+                setSession(result.user, result.role);
                 toast.success("Account created successfully!");
                 router.push("/");
             } else {

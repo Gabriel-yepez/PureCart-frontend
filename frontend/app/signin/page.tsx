@@ -28,8 +28,8 @@ export default function SignInPage() {
         try {
             const result = await loginAction(email, password);
 
-            if (result.ok && result.tokens && result.user) {
-                setSession(result.tokens, result.user);
+            if (result.ok && result.user && result.role) {
+                setSession(result.user, result.role);
                 toast.success("Signed in successfully!");
                 router.push("/");
             } else {
