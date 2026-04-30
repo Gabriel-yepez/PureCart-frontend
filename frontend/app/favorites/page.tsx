@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/utils";
 import { Heart, ShoppingCart, Loader2, HeartOff, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function FavoritesPage() {
   const { isAuthenticated } = useAuthStore();
@@ -155,10 +156,12 @@ export default function FavoritesPage() {
                     {/* Image */}
                     <div className="relative aspect-square bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-950/20 dark:via-gray-900/20 dark:to-gray-950/20 flex items-center justify-center overflow-hidden">
                       {p.image_url ? (
-                        <img
+                        <Image
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
                         <div className="text-8xl group-hover:scale-110 transition-transform duration-500">

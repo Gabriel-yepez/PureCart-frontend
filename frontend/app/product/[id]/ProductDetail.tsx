@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -135,10 +136,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {/* ─── Image Section ─────────────────────────────────────────── */}
         <div className="relative aspect-square bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-950/20 dark:via-gray-900/20 dark:to-gray-950/20 rounded-3xl overflow-hidden flex items-center justify-center">
           {product.image_url ? (
-            <img
+            <Image
               src={product.image_url}
               alt={product.name}
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              priority
+              className="object-cover"
             />
           ) : (
             <div className="text-[120px]">📦</div>
