@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Heart, Star, PackageX, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { addFavoriteAction, removeFavoriteAction, getFavoritesAction } from "@/lib/api/actions";
 import { toast } from "sonner";
 import type { Product } from "@/lib/api/types";
 
@@ -24,31 +24,20 @@ interface ProductGridProps {
 export default function ProductGrid({ title, products }: ProductGridProps) {
     const { addItem } = useCartStore();
     const { isAuthenticated } = useAuthStore();
+    const favoriteIds = useFavoritesStore((s) => s.ids);
+    const togglingIds = useFavoritesStore((s) => s.togglingIds);
+    const loadFavorites = useFavoritesStore((s) => s.load);
+    const resetFavorites = useFavoritesStore((s) => s.reset);
+    const toggleFavorite = useFavoritesStore((s) => s.toggle);
+    const favoritesLoaded = useFavoritesStore((s) => s.loaded);
 
-    // Track which product IDs are favorited by the current user
-    const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-    // Track which product IDs are currently being toggled (loading state)
-    const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
-
-    // Load user's favorites on mount (if authenticated)
     useEffect(() => {
         if (!isAuthenticated) {
-            setFavoriteIds(new Set());
+            resetFavorites();
             return;
         }
-
-        let cancelled = false;
-
-        async function loadFavs() {
-            const result = await getFavoritesAction();
-            if (!cancelled && result.ok) {
-                setFavoriteIds(new Set(result.favorites.map((f) => f.product_id)));
-            }
-        }
-
-        loadFavs();
-        return () => { cancelled = true; };
-    }, [isAuthenticated]);
+        if (!favoritesLoaded) loadFavorites();
+    }, [isAuthenticated, favoritesLoaded, loadFavorites, resetFavorites]);
 
     function handleAddToCart(product: Product) {
         const effectivePrice = product.discounted_price ?? product.price;
@@ -69,37 +58,12 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
             return;
         }
 
-        setTogglingIds((prev) => new Set(prev).add(productId));
-
-        const isFav = favoriteIds.has(productId);
-
-        if (isFav) {
-            const result = await removeFavoriteAction(productId);
-            if (result.ok) {
-                setFavoriteIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(productId);
-                    return next;
-                });
-                toast.success("Eliminado de favoritos");
-            } else {
-                toast.error(result.messages);
-            }
+        const result = await toggleFavorite(productId);
+        if (result.ok) {
+            toast.success(result.isFav ? "Agregado a favoritos" : "Eliminado de favoritos");
         } else {
-            const result = await addFavoriteAction(productId);
-            if (result.ok) {
-                setFavoriteIds((prev) => new Set(prev).add(productId));
-                toast.success("Agregado a favoritos");
-            } else {
-                toast.error(result.messages);
-            }
+            toast.error(result.messages ?? "No se pudo actualizar favoritos");
         }
-
-        setTogglingIds((prev) => {
-            const next = new Set(prev);
-            next.delete(productId);
-            return next;
-        });
     }
 
     function getBadgeInfo(product: Product): { label: string; color: string } | null {

@@ -5,11 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
-import {
-  addFavoriteAction,
-  removeFavoriteAction,
-  getFavoritesAction,
-} from "@/lib/api/actions";
+import { useFavoritesStore } from "@/store/favoritesStore";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,39 +34,27 @@ interface ProductDetailProps {
 export function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
+  const isFavorited = useFavoritesStore((s) => s.ids.has(product.id));
+  const isTogglingFav = useFavoritesStore((s) => s.togglingIds.has(product.id));
+  const favoritesLoaded = useFavoritesStore((s) => s.loaded);
+  const loadFavorites = useFavoritesStore((s) => s.load);
+  const resetFavorites = useFavoritesStore((s) => s.reset);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
 
   const [quantity, setQuantity] = useState(1);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [isTogglingFav, setIsTogglingFav] = useState(false);
-  const [isLoadingFav, setIsLoadingFav] = useState(false);
 
   const effectivePrice = product.discounted_price ?? product.price;
   const rating = Math.min(5, 3.5 + product.sales_count / 200);
   const inStock = product.stock > 0;
+  const isLoadingFav = isAuthenticated && !favoritesLoaded;
 
-  // Load favorite state
   useEffect(() => {
     if (!isAuthenticated) {
-      setIsFavorited(false);
+      resetFavorites();
       return;
     }
-
-    let cancelled = false;
-    setIsLoadingFav(true);
-
-    async function loadFav() {
-      const result = await getFavoritesAction();
-      if (!cancelled && result.ok) {
-        setIsFavorited(result.favorites.some((f) => f.product_id === product.id));
-      }
-      if (!cancelled) setIsLoadingFav(false);
-    }
-
-    loadFav();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, product.id]);
+    if (!favoritesLoaded) loadFavorites();
+  }, [isAuthenticated, favoritesLoaded, loadFavorites, resetFavorites]);
 
   function handleAddToCart() {
     const cartProduct: CartProduct = {
@@ -96,27 +80,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
       return;
     }
 
-    setIsTogglingFav(true);
-
-    if (isFavorited) {
-      const result = await removeFavoriteAction(product.id);
-      if (result.ok) {
-        setIsFavorited(false);
-        toast.success("Removed from favorites");
-      } else {
-        toast.error(result.messages);
-      }
+    const result = await toggleFavorite(product.id);
+    if (result.ok) {
+      toast.success(result.isFav ? "Added to favorites" : "Removed from favorites");
     } else {
-      const result = await addFavoriteAction(product.id);
-      if (result.ok) {
-        setIsFavorited(true);
-        toast.success("Added to favorites");
-      } else {
-        toast.error(result.messages);
-      }
+      toast.error(result.messages ?? "Could not update favorite");
     }
-
-    setIsTogglingFav(false);
   }
 
   return (
