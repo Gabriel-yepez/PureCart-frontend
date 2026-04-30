@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import gsap from "gsap";
 import { useAuthStore } from "@/store/authStore";
+import { logoutAction } from "@/lib/api/actions";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -168,7 +169,13 @@ export default function Header() {
                                         <Link href="/orders">Orders</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600">
+                                    <DropdownMenuItem
+                                        onClick={async () => {
+                                            await logoutAction();
+                                            logout();
+                                        }}
+                                        className="text-red-600 focus:text-red-600"
+                                    >
                                         Log out
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -257,7 +264,14 @@ export default function Header() {
                                         <div className="flex-1 px-4 py-2 text-sm font-medium border rounded-md">
                                             Hi, {user?.full_name}
                                         </div>
-                                        <Button variant="outline" className="flex-1" onClick={() => logout()}>
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            onClick={async () => {
+                                                await logoutAction();
+                                                logout();
+                                            }}
+                                        >
                                             Log out
                                         </Button>
                                     </>
