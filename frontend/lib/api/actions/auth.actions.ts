@@ -1,13 +1,6 @@
 "use server";
 
-// ============================================================================
-// Auth Server Actions
-// ============================================================================
-// These run exclusively on the server. They call the backend API and return
-// a serializable result to the client. Tokens are returned to be stored in
-// the client-side Zustand store (via localStorage/persist).
-// ============================================================================
-
+import { cookies } from "next/headers";
 import { authService } from "../services";
 import { usersService } from "../services";
 import { ApiError } from "../client";
@@ -16,12 +9,36 @@ import type { User } from "../types";
 export interface AuthActionResult {
   ok: boolean;
   messages: string;
-  tokens?: {
-    access_token: string;
-    refresh_token: string;
-    role: string;
-  };
   user?: User;
+  role?: string;
+}
+
+const COOKIE_OPTS_ACCESS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 15,
+};
+
+const COOKIE_OPTS_REFRESH = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
+};
+
+async function setAuthCookies(accessToken: string, refreshToken: string): Promise<void> {
+  const store = await cookies();
+  store.set("pca-access", accessToken, COOKIE_OPTS_ACCESS);
+  store.set("pca-refresh", refreshToken, COOKIE_OPTS_REFRESH);
+}
+
+export async function logoutAction(): Promise<void> {
+  const store = await cookies();
+  store.delete("pca-access");
+  store.delete("pca-refresh");
 }
 
 export async function loginAction(
@@ -31,19 +48,13 @@ export async function loginAction(
   try {
     const tokenRes = await authService.login({ email, password });
     const tokens = tokenRes.data!;
-
-    // Immediately fetch the user profile using the fresh token
+    await setAuthCookies(tokens.access_token, tokens.refresh_token);
     const userRes = await usersService.getMyProfile(tokens.access_token);
-
     return {
       ok: true,
       messages: tokenRes.messages,
-      tokens: {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        role: tokens.role,
-      },
       user: userRes.data ?? undefined,
+      role: tokens.role,
     };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -68,19 +79,13 @@ export async function registerAction(
       role: "customer",
     });
     const tokens = tokenRes.data!;
-
-    // Fetch the newly created user's profile
+    await setAuthCookies(tokens.access_token, tokens.refresh_token);
     const userRes = await usersService.getMyProfile(tokens.access_token);
-
     return {
       ok: true,
       messages: tokenRes.messages,
-      tokens: {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        role: tokens.role,
-      },
       user: userRes.data ?? undefined,
+      role: tokens.role,
     };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -98,18 +103,13 @@ export async function refreshTokenAction(
   try {
     const tokenRes = await authService.refresh(refreshToken);
     const tokens = tokenRes.data!;
-
+    await setAuthCookies(tokens.access_token, tokens.refresh_token);
     const userRes = await usersService.getMyProfile(tokens.access_token);
-
     return {
       ok: true,
       messages: "Token refreshed",
-      tokens: {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        role: tokens.role,
-      },
       user: userRes.data ?? undefined,
+      role: tokens.role,
     };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -145,19 +145,13 @@ export async function exchangeOAuthCodeAction(
   try {
     const tokenRes = await authService.exchangeOAuthCode(code, codeVerifier);
     const tokens = tokenRes.data!;
-
-    // Fetch the user profile using the fresh app token
+    await setAuthCookies(tokens.access_token, tokens.refresh_token);
     const userRes = await usersService.getMyProfile(tokens.access_token);
-
     return {
       ok: true,
       messages: tokenRes.messages,
-      tokens: {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        role: tokens.role,
-      },
       user: userRes.data ?? undefined,
+      role: tokens.role,
     };
   } catch (error) {
     if (error instanceof ApiError) {
