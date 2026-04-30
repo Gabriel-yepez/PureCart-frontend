@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { Card, CardContent } from "@/components/ui/card";
@@ -187,11 +188,12 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                         ref={gridRef}
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
                     >
-                        {products.map((product) => {
+                        {products.map((product, index) => {
                             const badge = getBadgeInfo(product);
                             const effectivePrice = product.discounted_price ?? product.price;
                             const isFav = favoriteIds.has(product.id);
                             const isToggling = togglingIds.has(product.id);
+                            const isAboveFold = index < 4;
 
                             return (
                                 <Card
@@ -203,10 +205,13 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                                         <div className="relative aspect-square bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-950/20 dark:via-gray-900/20 dark:to-gray-950/20 flex items-center justify-center overflow-hidden">
                                             <Link href={`/product/${product.id}`} className="absolute inset-0 z-0">
                                                 {product.image_url ? (
-                                                    <img
+                                                    <Image
                                                         src={product.image_url}
                                                         alt={product.name}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                        fill
+                                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                                        priority={isAboveFold}
+                                                        className="object-cover group-hover:scale-110 transition-transform duration-500"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-8xl group-hover:scale-110 transition-transform duration-500">
