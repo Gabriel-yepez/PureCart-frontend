@@ -31,7 +31,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
     const titleRef = useRef<HTMLDivElement>(null);
     const gridRef = useRef<HTMLDivElement>(null);
     const { addItem } = useCartStore();
-    const { isAuthenticated, accessToken } = useAuthStore();
+    const { isAuthenticated } = useAuthStore();
 
     // Track which product IDs are favorited by the current user
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
@@ -40,7 +40,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
 
     // Load user's favorites on mount (if authenticated)
     useEffect(() => {
-        if (!isAuthenticated || !accessToken) {
+        if (!isAuthenticated) {
             setFavoriteIds(new Set());
             return;
         }
@@ -48,7 +48,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
         let cancelled = false;
 
         async function loadFavs() {
-            const result = await getFavoritesAction(accessToken!);
+            const result = await getFavoritesAction();
             if (!cancelled && result.ok) {
                 setFavoriteIds(new Set(result.favorites.map((f) => f.product_id)));
             }
@@ -56,7 +56,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
 
         loadFavs();
         return () => { cancelled = true; };
-    }, [isAuthenticated, accessToken]);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -106,7 +106,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
     }
 
     async function handleToggleFavorite(productId: string) {
-        if (!isAuthenticated || !accessToken) {
+        if (!isAuthenticated) {
             toast.error("Inicia sesión para agregar favoritos");
             return;
         }
@@ -116,7 +116,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
         const isFav = favoriteIds.has(productId);
 
         if (isFav) {
-            const result = await removeFavoriteAction(productId, accessToken);
+            const result = await removeFavoriteAction(productId);
             if (result.ok) {
                 setFavoriteIds((prev) => {
                     const next = new Set(prev);
@@ -128,7 +128,7 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                 toast.error(result.messages);
             }
         } else {
-            const result = await addFavoriteAction(productId, accessToken);
+            const result = await addFavoriteAction(productId);
             if (result.ok) {
                 setFavoriteIds((prev) => new Set(prev).add(productId));
                 toast.success("Agregado a favoritos");

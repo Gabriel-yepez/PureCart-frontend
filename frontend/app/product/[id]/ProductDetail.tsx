@@ -36,7 +36,7 @@ interface ProductDetailProps {
 
 export function ProductDetail({ product }: ProductDetailProps) {
   const { addItem } = useCartStore();
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -49,7 +49,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
   // Load favorite state
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated) {
       setIsFavorited(false);
       return;
     }
@@ -58,7 +58,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     setIsLoadingFav(true);
 
     async function loadFav() {
-      const result = await getFavoritesAction(accessToken!);
+      const result = await getFavoritesAction();
       if (!cancelled && result.ok) {
         setIsFavorited(result.favorites.some((f) => f.product_id === product.id));
       }
@@ -69,7 +69,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, product.id]);
+  }, [isAuthenticated, product.id]);
 
   function handleAddToCart() {
     const cartProduct: CartProduct = {
@@ -90,7 +90,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   }
 
   async function handleToggleFavorite() {
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated) {
       toast.error("Sign in to add favorites");
       return;
     }
@@ -98,7 +98,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     setIsTogglingFav(true);
 
     if (isFavorited) {
-      const result = await removeFavoriteAction(product.id, accessToken);
+      const result = await removeFavoriteAction(product.id);
       if (result.ok) {
         setIsFavorited(false);
         toast.success("Removed from favorites");
@@ -106,7 +106,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
         toast.error(result.messages);
       }
     } else {
-      const result = await addFavoriteAction(product.id, accessToken);
+      const result = await addFavoriteAction(product.id);
       if (result.ok) {
         setIsFavorited(true);
         toast.success("Added to favorites");

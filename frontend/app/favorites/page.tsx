@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function FavoritesPage() {
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { addItem } = useCartStore();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,12 +31,12 @@ export default function FavoritesPage() {
     if (!mounted) return;
 
     async function load() {
-      if (!isAuthenticated || !accessToken) {
+      if (!isAuthenticated) {
         setLoading(false);
         return;
       }
       setLoading(true);
-      const result = await getFavoritesAction(accessToken);
+      const result = await getFavoritesAction();
       if (result.ok) {
         setFavorites(result.favorites);
       } else {
@@ -46,14 +46,12 @@ export default function FavoritesPage() {
     }
 
     load();
-  }, [mounted, isAuthenticated, accessToken]);
+  }, [mounted, isAuthenticated]);
 
   async function handleRemove(productId: string) {
-    if (!accessToken) return;
-
     setRemovingIds((prev) => new Set(prev).add(productId));
 
-    const result = await removeFavoriteAction(productId, accessToken);
+    const result = await removeFavoriteAction(productId);
     if (result.ok) {
       setFavorites((prev) => prev.filter((f) => f.product_id !== productId));
       toast.success("Eliminado de favoritos");

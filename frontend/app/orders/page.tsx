@@ -39,7 +39,7 @@ function getStatusBadge(status: string) {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
@@ -53,12 +53,12 @@ export default function OrdersPage() {
     if (!mounted) return;
 
     async function load() {
-      if (!isAuthenticated || !accessToken) {
+      if (!isAuthenticated) {
         setLoading(false);
         return;
       }
       setLoading(true);
-      const result = await getMyOrdersAction(accessToken);
+      const result = await getMyOrdersAction();
       if (result.ok) {
         setOrders(result.orders);
       } else {
@@ -68,14 +68,12 @@ export default function OrdersPage() {
     }
 
     load();
-  }, [mounted, isAuthenticated, accessToken]);
+  }, [mounted, isAuthenticated]);
 
   async function handleCancel(orderId: string) {
-    if (!accessToken) return;
-
     setCancellingIds((prev) => new Set(prev).add(orderId));
 
-    const result = await cancelOrderAction(orderId, accessToken);
+    const result = await cancelOrderAction(orderId);
     if (result.ok) {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: "cancelled" } : o)),

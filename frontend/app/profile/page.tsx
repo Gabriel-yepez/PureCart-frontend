@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { isAuthenticated, accessToken, user: storeUser, setUser } = useAuthStore();
+  const { isAuthenticated, user: storeUser, setUser } = useAuthStore();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,13 +41,13 @@ export default function ProfilePage() {
     if (!mounted) return;
 
     async function load() {
-      if (!isAuthenticated || !accessToken) {
+      if (!isAuthenticated) {
         setLoading(false);
         return;
       }
       setLoading(true);
       try {
-        const res = await usersService.getMyProfile(accessToken);
+        const res = await usersService.getMyProfile();
         if (res.data) {
           setProfile(res.data);
           setFullName(res.data.full_name);
@@ -60,10 +60,10 @@ export default function ProfilePage() {
     }
 
     load();
-  }, [mounted, isAuthenticated, accessToken]);
+  }, [mounted, isAuthenticated]);
 
   async function handleSave() {
-    if (!accessToken || !profile) return;
+    if (!profile) return;
 
     setSaving(true);
 
@@ -82,7 +82,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const res = await usersService.updateMyProfile(updates, accessToken);
+      const res = await usersService.updateMyProfile(updates);
       if (res.data) {
         setProfile(res.data);
         setUser(res.data); // Update Zustand store so Header reflects changes

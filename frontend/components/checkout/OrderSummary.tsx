@@ -21,7 +21,7 @@ interface OrderSummaryProps {
 
 export function OrderSummary({ shippingData, paymentMethodId }: OrderSummaryProps) {
   const { items, totalPrice, clearCart } = useCartStore();
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -36,7 +36,7 @@ export function OrderSummary({ shippingData, paymentMethodId }: OrderSummaryProp
       return;
     }
 
-    if (!isAuthenticated || !accessToken) {
+    if (!isAuthenticated) {
       toast.error("Por favor, inicia sesion para continuar");
       router.push("/signin?redirect=/checkout");
       return;
@@ -65,7 +65,7 @@ export function OrderSummary({ shippingData, paymentMethodId }: OrderSummaryProp
         currency: "USD",
       };
 
-      const result = await createOrderAction(orderPayload, accessToken);
+      const result = await createOrderAction(orderPayload);
 
       if (result.ok && result.order) {
         clearCart();
