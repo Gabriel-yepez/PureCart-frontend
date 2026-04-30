@@ -24,6 +24,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   token?: string;
   rawResponse?: boolean;
+  skipAuth?: boolean;
   nextOptions?: NextFetchRequestConfig;
 }
 
@@ -42,9 +43,9 @@ async function request<T>(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<ApiResponse<T>> {
-  const { body, token, rawResponse, nextOptions, headers: extraHeaders, ...fetchOptions } = options;
+  const { body, token, rawResponse, skipAuth, nextOptions, headers: extraHeaders, ...fetchOptions } = options;
 
-  const resolvedToken = await resolveToken(token);
+  const resolvedToken = skipAuth ? null : await resolveToken(token);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

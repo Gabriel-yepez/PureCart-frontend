@@ -5,6 +5,9 @@
 import { api } from "../client";
 import type { Product, ProductFilters } from "../types";
 
+const LIST_REVALIDATE_SECONDS = 60;
+const DETAIL_REVALIDATE_SECONDS = 300;
+
 function buildQuery(filters?: ProductFilters): string {
   if (!filters) return "";
   const params = new URLSearchParams();
@@ -19,23 +22,34 @@ function buildQuery(filters?: ProductFilters): string {
 }
 
 export const productsService = {
-  /** List products with optional filters. Works great in Server Components (no token needed). */
   list(filters?: ProductFilters) {
-    return api.get<Product[]>(`/products${buildQuery(filters)}`);
+    return api.get<Product[]>(`/products${buildQuery(filters)}`, {
+      skipAuth: true,
+      nextOptions: { revalidate: LIST_REVALIDATE_SECONDS, tags: ["products"] },
+    });
   },
 
-  /** Get products that have an active discount. */
   getDiscounted(limit = 20) {
-    return api.get<Product[]>(`/products/discounted?limit=${limit}`);
+    return api.get<Product[]>(`/products/discounted?limit=${limit}`, {
+      skipAuth: true,
+      nextOptions: { revalidate: LIST_REVALIDATE_SECONDS, tags: ["products"] },
+    });
   },
 
-  /** Get best-selling products. */
   getBestSellers(limit = 20) {
-    return api.get<Product[]>(`/products/best-sellers?limit=${limit}`);
+    return api.get<Product[]>(`/products/best-sellers?limit=${limit}`, {
+      skipAuth: true,
+      nextOptions: { revalidate: LIST_REVALIDATE_SECONDS, tags: ["products"] },
+    });
   },
 
-  /** Get a single product by its ID. */
   getById(productId: string) {
-    return api.get<Product>(`/products/${productId}`);
+    return api.get<Product>(`/products/${productId}`, {
+      skipAuth: true,
+      nextOptions: {
+        revalidate: DETAIL_REVALIDATE_SECONDS,
+        tags: ["products", `product:${productId}`],
+      },
+    });
   },
 } as const;

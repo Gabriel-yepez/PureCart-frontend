@@ -4,6 +4,7 @@
 // Order Server Actions - Checkout / Order management
 // ============================================================================
 
+import { updateTag } from "next/cache";
 import { ordersService } from "../services";
 import { paymentMethodsService } from "../services";
 import { ApiError } from "../client";
@@ -18,6 +19,7 @@ export interface OrderResult {
 export async function createOrderAction(data: OrderCreate): Promise<OrderResult> {
   try {
     const res = await ordersService.create(data);
+    updateTag("products");
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
