@@ -15,12 +15,9 @@ export interface OrderResult {
   messages: string;
 }
 
-export async function createOrderAction(
-  data: OrderCreate,
-  token: string,
-): Promise<OrderResult> {
+export async function createOrderAction(data: OrderCreate): Promise<OrderResult> {
   try {
-    const res = await ordersService.create(data, token);
+    const res = await ordersService.create(data);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -32,11 +29,13 @@ export async function createOrderAction(
   }
 }
 
-export async function getMyOrdersAction(
-  token: string,
-): Promise<{ ok: boolean; orders: OrderSummary[]; messages: string }> {
+export async function getMyOrdersAction(): Promise<{
+  ok: boolean;
+  orders: OrderSummary[];
+  messages: string;
+}> {
   try {
-    const res = await ordersService.listMine(token);
+    const res = await ordersService.listMine();
     return { ok: true, orders: res.data ?? [], messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -48,12 +47,9 @@ export async function getMyOrdersAction(
   }
 }
 
-export async function getOrderByIdAction(
-  orderId: string,
-  token: string,
-): Promise<OrderResult> {
+export async function getOrderByIdAction(orderId: string): Promise<OrderResult> {
   try {
-    const res = await ordersService.getById(orderId, token);
+    const res = await ordersService.getById(orderId);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -65,12 +61,9 @@ export async function getOrderByIdAction(
   }
 }
 
-export async function cancelOrderAction(
-  orderId: string,
-  token: string,
-): Promise<OrderResult> {
+export async function cancelOrderAction(orderId: string): Promise<OrderResult> {
   try {
-    const res = await ordersService.cancel(orderId, token);
+    const res = await ordersService.cancel(orderId);
     return { ok: true, order: res.data ?? null, messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
