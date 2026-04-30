@@ -8,11 +8,13 @@ import { favoritesService } from "../services";
 import { ApiError } from "../client";
 import type { Favorite } from "../types";
 
-export async function getFavoritesAction(
-  token: string,
-): Promise<{ ok: boolean; favorites: Favorite[]; messages: string }> {
+export async function getFavoritesAction(): Promise<{
+  ok: boolean;
+  favorites: Favorite[];
+  messages: string;
+}> {
   try {
-    const res = await favoritesService.getAll(token);
+    const res = await favoritesService.getAll();
     return { ok: true, favorites: res.data ?? [], messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -26,10 +28,9 @@ export async function getFavoritesAction(
 
 export async function addFavoriteAction(
   productId: string,
-  token: string,
 ): Promise<{ ok: boolean; messages: string }> {
   try {
-    const res = await favoritesService.add(productId, token);
+    const res = await favoritesService.add(productId);
     return { ok: true, messages: res.messages };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -43,10 +44,9 @@ export async function addFavoriteAction(
 
 export async function removeFavoriteAction(
   productId: string,
-  token: string,
 ): Promise<{ ok: boolean; messages: string }> {
   try {
-    await favoritesService.remove(productId, token);
+    await favoritesService.remove(productId);
     return { ok: true, messages: "Removed from favorites" };
   } catch (error) {
     if (error instanceof ApiError) {
