@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
@@ -12,13 +12,7 @@ import { ShoppingCart, Heart, Star, PackageX, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { addFavoriteAction, removeFavoriteAction, getFavoritesAction } from "@/lib/api/actions";
 import { toast } from "sonner";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { Product } from "@/lib/api/types";
-
-if (typeof window !== "undefined") {
-    gsap.registerPlugin(ScrollTrigger);
-}
 
 const STAR_ARRAY = [0, 1, 2, 3, 4];
 
@@ -28,9 +22,6 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ title, products }: ProductGridProps) {
-    const sectionRef = useRef<HTMLElement>(null);
-    const titleRef = useRef<HTMLDivElement>(null);
-    const gridRef = useRef<HTMLDivElement>(null);
     const { addItem } = useCartStore();
     const { isAuthenticated } = useAuthStore();
 
@@ -58,40 +49,6 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
         loadFavs();
         return () => { cancelled = true; };
     }, [isAuthenticated]);
-
-    useEffect(() => {
-        const ctx = gsap.context(() => {
-            // Animate section title
-            gsap.from(titleRef.current, {
-                scrollTrigger: {
-                    trigger: titleRef.current,
-                    start: "top 80%",
-                },
-                opacity: 0,
-                y: 30,
-                duration: 0.8,
-                ease: "power3.out",
-            });
-
-            // Animate product cards
-            const cards = gridRef.current?.querySelectorAll(".product-card");
-            if (cards && cards.length > 0) {
-                gsap.from(cards, {
-                    scrollTrigger: {
-                        trigger: gridRef.current,
-                        start: "top 70%",
-                    },
-                    opacity: 0,
-                    y: 50,
-                    stagger: 0.1,
-                    duration: 0.8,
-                    ease: "power3.out",
-                });
-            }
-        }, sectionRef);
-
-        return () => ctx.revert();
-    }, [products]);
 
     function handleAddToCart(product: Product) {
         const effectivePrice = product.discounted_price ?? product.price;
@@ -155,10 +112,10 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
     }
 
     return (
-        <section ref={sectionRef} className="py-20 bg-background" id="shop">
+        <section className="py-20 bg-background" id="shop">
             <div className="container mx-auto px-4 lg:px-8">
                 {/* Section Header */}
-                <div ref={titleRef} className="text-center mb-16 space-y-4">
+                <div className="text-center mb-16 space-y-4">
                     <h2 className="text-4xl md:text-5xl font-bold">
                         {title ? (
                             <span className="text-foreground">{title}</span>
@@ -185,7 +142,6 @@ export default function ProductGrid({ title, products }: ProductGridProps) {
                 {/* Product Grid */}
                 {products.length > 0 && (
                     <div
-                        ref={gridRef}
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
                     >
                         {products.map((product, index) => {
