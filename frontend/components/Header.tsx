@@ -8,7 +8,6 @@ import { ShoppingCart, Search, Menu, X, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import gsap from "gsap";
 import { useAuthStore } from "@/store/authStore";
 import { logoutAction } from "@/lib/api/actions";
 import {
@@ -35,7 +34,6 @@ export default function Header() {
     const [isMounted, setIsMounted] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const headerRef = useRef<HTMLElement>(null);
-    const logoRef = useRef<HTMLAnchorElement>(null);
     const router = useRouter();
 
     const handleSearch = useCallback(
@@ -62,22 +60,6 @@ export default function Header() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    useEffect(() => {
-        if (logoRef.current) {
-            gsap.from(logoRef.current, {
-                opacity: 0,
-                y: -20,
-                duration: 0.8,
-                ease: "power3.out",
-                onComplete: () => {
-                    if (logoRef.current) {
-                        gsap.set(logoRef.current, { clearProps: "all" });
-                    }
-                },
-            });
-        }
-    }, []);
-
     return (
         <header
             ref={headerRef}
@@ -89,7 +71,7 @@ export default function Header() {
             <div className="container mx-auto px-4 lg:px-8">
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
-                    <Link href="/" ref={logoRef} className="flex flex-row items-center space-x-2 cursor-pointer">
+                    <Link href="/" className="flex flex-row items-center space-x-2 cursor-pointer">
                         <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-lg">
                             <span className="text-white dark:text-black font-bold text-xl">P</span>
                         </div>
@@ -100,18 +82,15 @@ export default function Header() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center space-x-8">
-                        {navItems.map((item, index) => (
-                            <a
+                        {navItems.map((item) => (
+                            <Link
                                 key={item.name}
                                 href={item.href}
                                 className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative group"
-                                style={{
-                                    animation: `fadeInDown 0.5s ease-out ${index * 0.1}s both`,
-                                }}
                             >
                                 {item.name}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black dark:bg-white group-hover:w-full transition-all duration-300"></span>
-                            </a>
+                            </Link>
                         ))}
                     </nav>
 
@@ -241,14 +220,14 @@ export default function Header() {
 
                             {/* Mobile Nav Items */}
                             {navItems.map((item) => (
-                                <a
+                                <Link
                                     key={item.name}
                                     href={item.href}
                                     className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors py-2"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     {item.name}
-                                </a>
+                                </Link>
                             ))}
 
                             {/* Mobile Action Buttons */}
@@ -289,18 +268,6 @@ export default function Header() {
                 )}
             </div>
 
-            <style jsx>{`
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
         </header>
     );
 }
