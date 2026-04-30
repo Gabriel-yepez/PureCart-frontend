@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductGrid from "@/components/ProductGrid";
@@ -9,16 +10,27 @@ interface CategoryPageProps {
     searchParams: Promise<{ search?: string }>;
 }
 
+function buildTitle(slug: string, search?: string): string {
+    if (slug === "all") return search ? `Search: "${search}"` : "All Products";
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
+export async function generateMetadata({ params, searchParams }: CategoryPageProps): Promise<Metadata> {
+    const { slug } = await params;
+    const { search } = await searchParams;
+    const title = buildTitle(slug, search);
+    return {
+        title: `${title} | PureCart`,
+        description: `Explora la colección ${title} en PureCart.`,
+    };
+}
+
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
     const { slug } = await params;
     const { search } = await searchParams;
 
     const isAll = slug === "all";
-    const title = isAll
-        ? search
-            ? `Search: "${search}"`
-            : "All Products"
-        : slug.charAt(0).toUpperCase() + slug.slice(1);
+    const title = buildTitle(slug, search);
 
     const filters: ProductFilters = { limit: 40 };
     if (!isAll) filters.category = slug;

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getProductByIdAction } from "@/lib/api/actions";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
@@ -6,6 +7,27 @@ import { ProductDetail } from "./ProductDetail";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const result = await getProductByIdAction(id);
+
+  if (!result.ok || !result.product) {
+    return { title: "Producto no encontrado | PureCart" };
+  }
+
+  const { name, description, image_url } = result.product;
+  return {
+    title: `${name} | PureCart`,
+    description: description ?? `Compra ${name} en PureCart`,
+    openGraph: {
+      title: name,
+      description: description ?? undefined,
+      images: image_url ? [{ url: image_url }] : undefined,
+      type: "website",
+    },
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
