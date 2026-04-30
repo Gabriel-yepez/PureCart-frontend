@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/store/authStore";
 import { useCartStore, type CartProduct } from "@/store/cartStore";
 import { getFavoritesAction, removeFavoriteAction } from "@/lib/api/actions";
 import type { Favorite } from "@/lib/api/types";
@@ -11,31 +10,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
-import { Heart, ShoppingCart, Loader2, HeartOff, LogIn } from "lucide-react";
+import { Heart, ShoppingCart, Loader2, HeartOff } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function FavoritesPage() {
-  const { isAuthenticated } = useAuthStore();
   const { addItem } = useCartStore();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
     async function load() {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       const result = await getFavoritesAction();
       if (result.ok) {
@@ -47,7 +34,7 @@ export default function FavoritesPage() {
     }
 
     load();
-  }, [mounted, isAuthenticated]);
+  }, []);
 
   async function handleRemove(productId: string) {
     setRemovingIds((prev) => new Set(prev).add(productId));
@@ -98,28 +85,15 @@ export default function FavoritesPage() {
           Productos que has guardado para más tarde.
         </p>
 
-        {/* Not authenticated */}
-        {mounted && !isAuthenticated && (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-            <LogIn className="w-16 h-16 text-muted-foreground/40" />
-            <p className="text-xl text-muted-foreground">
-              Inicia sesión para ver tus favoritos
-            </p>
-            <Button asChild>
-              <Link href="/signin?redirect=/favorites">Iniciar Sesión</Link>
-            </Button>
-          </div>
-        )}
-
         {/* Loading */}
-        {mounted && isAuthenticated && loading && (
+        {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {/* Empty state */}
-        {mounted && isAuthenticated && !loading && favorites.length === 0 && (
+        {!loading && favorites.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <HeartOff className="w-16 h-16 text-muted-foreground/40" />
             <p className="text-xl text-muted-foreground">
@@ -135,7 +109,7 @@ export default function FavoritesPage() {
         )}
 
         {/* Favorites grid */}
-        {mounted && isAuthenticated && !loading && favorites.length > 0 && (
+        {!loading && favorites.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {favorites.map((fav) => {
               const p = fav.products;

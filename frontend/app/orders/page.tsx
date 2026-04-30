@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/store/authStore";
 import { getMyOrdersAction, cancelOrderAction } from "@/lib/api/actions";
 import type { OrderSummary } from "@/lib/api/types";
 import Header from "@/components/Header";
@@ -12,7 +11,6 @@ import { formatPrice } from "@/lib/utils";
 import {
   Loader2,
   PackageOpen,
-  LogIn,
   Clock,
   CheckCircle2,
   XCircle,
@@ -39,24 +37,12 @@ function getStatusBadge(status: string) {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated } = useAuthStore();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
     async function load() {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       const result = await getMyOrdersAction();
       if (result.ok) {
@@ -68,7 +54,7 @@ export default function OrdersPage() {
     }
 
     load();
-  }, [mounted, isAuthenticated]);
+  }, []);
 
   async function handleCancel(orderId: string) {
     setCancellingIds((prev) => new Set(prev).add(orderId));
@@ -102,28 +88,15 @@ export default function OrdersPage() {
           Historial y estado de tus compras.
         </p>
 
-        {/* Not authenticated */}
-        {mounted && !isAuthenticated && (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-            <LogIn className="w-16 h-16 text-muted-foreground/40" />
-            <p className="text-xl text-muted-foreground">
-              Inicia sesión para ver tus pedidos
-            </p>
-            <Button asChild>
-              <Link href="/signin?redirect=/orders">Iniciar Sesión</Link>
-            </Button>
-          </div>
-        )}
-
         {/* Loading */}
-        {mounted && isAuthenticated && loading && (
+        {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {/* Empty state */}
-        {mounted && isAuthenticated && !loading && orders.length === 0 && (
+        {!loading && orders.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <PackageOpen className="w-16 h-16 text-muted-foreground/40" />
             <p className="text-xl text-muted-foreground">No tienes pedidos aún</p>
@@ -137,7 +110,7 @@ export default function OrdersPage() {
         )}
 
         {/* Orders list */}
-        {mounted && isAuthenticated && !loading && orders.length > 0 && (
+        {!loading && orders.length > 0 && (
           <div className="space-y-4">
             {orders.map((order) => {
               const statusInfo = getStatusBadge(order.status);
